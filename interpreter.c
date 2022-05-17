@@ -50,8 +50,15 @@ Value *evalIf(Value *args, Frame *frame){
 //calls eval for each top-level S-expression in the program. 
 //You should print out any necessary results before moving on to the next S-expression.
 void interpret(Value *tree){
+   Frame *frame = talloc(sizeof(Frame));
+   frame->parent = NULL;
+   frame->bindings = makeNull();
    //for s-expression in program:
-      eval(tree, frame)
+   while (tree->type != NULL_TYPE){
+      print(eval(car(tree), frame)); //unclear on where we are meant to populate the frame with bindings
+      tree = cdr(tree);
+      printf("\n");
+   }
 }
 
 Value *eval(Value *tree, Frame *frame) {
