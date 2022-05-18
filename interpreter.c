@@ -62,10 +62,10 @@ Value *lookUpSymbol(Value *symbol, Frame *frame)
     return NULL;
 }
 
-Value *createBindings(Frame *frame, Value *bindings)
+void *copyToBindings(Value *tree)
 {
-    // set all correct bindings to symbols
-    return 0;
+   
+   return bindings;
 }
 
 Value *evalIf(Value *args, Frame *frame)
@@ -96,10 +96,12 @@ Value *evalIf(Value *args, Frame *frame)
 }
 
 Value *evalLet(Value *args, Frame *frame){
-   
    Frame* newFrame = talloc(sizeof(Frame));
    newFrame->bindings = frame->bindings;
    newFrame->parent = frame;
+   Value *list = car(args);
+   newFrame->bindings = copyToBindings(list);
+   }
 }
 
 // calls eval for each top-level S-expression in the program.
@@ -121,19 +123,19 @@ void interpret(Value *tree)
 
 Value *eval(Value *tree, Frame *frame)
 {
-    switch (tree->type)
-    {
-    case INT_TYPE : // this means the whole program consists of one single number, so we can just return the number.
-        return car(tree);
+   switch (tree->type)
+   {
+   case INT_TYPE : // this means the whole program consists of one single number, so we can just return the number.
+      return car(tree);
     
-    case DOUBLE_TYPE :
-        return car(tree);
-    case BOOL_TYPE :
-        return car(tree);
-    case NULL_TYPE :
-        return car(tree);
-    case STR_TYPE: // this means the whole program is just a string, so we can just return it
-        return car(tree); 
+   case DOUBLE_TYPE :
+      return car(tree);
+   case BOOL_TYPE :
+      return car(tree);
+   case NULL_TYPE :
+      return car(tree);
+   case STR_TYPE: // this means the whole program is just a string, so we can just return it
+      return car(tree); 
         // if (tree->s == "let")
         // {
         //     // construct a frame
@@ -147,33 +149,33 @@ Value *eval(Value *tree, Frame *frame)
         //     // evaluate x, it looks in the current frame to find a value for x.
         // }
         // break;
-    case SYMBOL_TYPE : // this means that the whole program is just a variable name, so just return the value of the variable.
-        return lookUpSymbol(tree, frame);
-    case CONS_TYPE :
-        Value *first = car(tree);
-        Value *args = cdr(tree);
+   case SYMBOL_TYPE : // this means that the whole program is just a variable name, so just return the value of the variable.
+      return lookUpSymbol(tree, frame);
+   case CONS_TYPE :
+      Value *first = car(tree);
+      Value *args = cdr(tree);
 
         // Sanity and error checking on first...
 
-        if (!strcmp(first->s, "if"))
+      if (!strcmp(first->s, "if"))
         {
             result = evalIf(args, frame);
         }
 
-        if (!strcmp(first->s, "let"))
-        {
+      if (!strcmp(first->s, "let"))
+         {
             result = evalLet(args, frame);
-        }
+         }
         // .. other special forms here...
 
-        else
-        {
-            // not a recognized special form
-            evaluationError();
-        }
-        break;
+      else
+         {
+         // not a recognized special form
+         evaluationError();
+         }
+      break;
 
-        ....
-    }
+      ....
+   }
     ....
 }
