@@ -70,7 +70,7 @@ Value *createBindings(Frame *frame, Value *bindings)
 
 Value *evalIf(Value *args, Frame *frame)
 {
-    if (length(args) != 3)
+    if (treeLength(args) != 3)
     {
         evaluationError("evalution error");
     }
@@ -80,13 +80,13 @@ Value *evalIf(Value *args, Frame *frame)
     }
     else
     {
-        if (eval(car(args))->i == 1)
+        if (eval(car(args), frame)->i == 1)
         {
-            return eval(car(cdr(args)));
+            return eval(car(cdr(args)), frame);
         }
         else
         {
-            return eval(car(cdr(cdr(args))));
+            return eval(car(cdr(cdr(args))), frame);
         }
     }
     return NULL;
@@ -100,10 +100,11 @@ void interpret(Value *tree)
     frame->parent = NULL;
     frame->bindings = makeNull();
     // for s-expression in program:
-    while (tree->type != NULL_TYPE)
+    Value *curr = car(tree);
+    while (curr->type != NULL_TYPE)
     {
-        print(eval(car(tree), frame)); // unclear on where we are meant to populate the frame with bindings
-        tree = cdr(tree);
+        print(eval(car(curr), frame)); // unclear on where we are meant to populate the frame with bindings
+        curr = cdr(curr);
         printf("\n");
     }
 }
@@ -113,16 +114,16 @@ Value *eval(Value *tree, Frame *frame)
     switch (tree->type)
     {
     case INT_TYPE : // this means the whole program consists of one single number, so we can just return the number.
-        return tree;
+        return car(tree);
     
     case DOUBLE_TYPE :
-        return tree;
+        return car(tree);
     case BOOL_TYPE :
-        return tree;
+        return car(tree);
     case NULL_TYPE :
-        return tree;
+        return car(tree);
     case STR_TYPE: // this means the whole program is just a string, so we can just return it
-        return tree; 
+        return car(tree); 
         // if (tree->s == "let")
         // {
         //     // construct a frame
@@ -149,6 +150,7 @@ Value *eval(Value *tree, Frame *frame)
             result = evalIf(args, frame);
         }
 
+         
         // .. other special forms here...
 
         else
