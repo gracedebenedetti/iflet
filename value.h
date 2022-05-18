@@ -36,6 +36,13 @@ struct Frame {
     Value *bindings;
     struct Frame *parent;
 };
+// we have to choose how to implement this. my idea is a list of cons cells, where each cell points to a *pair* of
+                                        // cons cells, which are (symbol, value)
+                                        // so (let ((x 1) (y "a")) ...) would look like *bindings = CONS-------------->CONS
+                                            //                                                       |                   |
+                                            //                                                      CONS--->CONS       CONS--->CONS
+                                            //                                                       |        |         |        |
+                                            //                                                   SYMBOL(x)   INT(1)  SYMBOL(y)  STR("a")
 
 typedef struct Frame Frame;
 
