@@ -80,16 +80,26 @@ Value *evalIf(Value *args, Frame *frame)
     }
     else
     {
+       Frame* newFrame = talloc(sizeof(Frame));
+       newFrame->bindings = frame->bindings;
+       newFrame->parent = frame;
         if (eval(car(args), frame)->i == 1)
         {
-            return eval(car(cdr(args)), frame);
+            return eval(car(cdr(args)), newFrame);
         }
         else
         {
-            return eval(car(cdr(cdr(args))), frame);
+            return eval(car(cdr(cdr(args))), newFrame);
         }
     }
     return NULL;
+}
+
+Value *evalLet(Value *args, Frame *frame){
+   
+   Frame* newFrame = talloc(sizeof(Frame));
+   newFrame->bindings = frame->bindings;
+   newFrame->parent = frame;
 }
 
 // calls eval for each top-level S-expression in the program.
@@ -150,7 +160,10 @@ Value *eval(Value *tree, Frame *frame)
             result = evalIf(args, frame);
         }
 
-         
+        if (!strcmp(first->s, "let"))
+        {
+            result = evalLet(args, frame);
+        }
         // .. other special forms here...
 
         else
