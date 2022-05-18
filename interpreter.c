@@ -16,23 +16,49 @@ void evaluationError(char *errorMessage)
     texit(1);
 }
 
-Value *lookUpSymbol(Value *tree, Frame *frame)
+// Returns the length of a given tree. Tree should be a list of CONS_TYPEs followed by a NULL_TYPE
+int treeLength(Value* tree)
 {
-    while (frame != NULL)
+    int len = 0;
+    Value* cur = tree;
+    while (cur->type != NULL_TYPE)
     {
-        Value *bindings = frame->bindings;
-        while (bindings->type != NULL_TYPE)
+        if (cur->type != CONS_TYPE)
         {
-            *binding = car(bindings);
-            if (car(tree) == binding->s)
-            {
-                return cdr(binding);
-            }
-            bindings = cdr(bindings);
+            printf("Error in treeLength(). CONS_TYPE node expected\n");
+            texit(1);
         }
-        frame = frame->parent;
+        len++;
+        cur = cdr(cur);
     }
-    evaluationError("evalution error");
+    return len;
+}
+
+// This method looks up the given symbol within the bindings to see if it is a bound variable
+Value *lookUpSymbol(Value *symbol, Frame *frame)
+{
+    Value* bindings = frame->bindings; // we have to choose how to implement this. my idea is a list of cons cells, where each cell points to a *pair* of
+                                        // cons cells, which are (symbol, value)
+                                        // so (let ((x 1) (y "a")) ...) would look like *bindings = CONS-------------->CONS
+                                            //                                                       |                   |
+                                            //                                                      CONS--->CONS       CONS--->CONS
+                                            //                                                       |        |         |        |
+                                            //                                                   SYMBOL(x)   INT(1)  SYMBOL(y)  STR("a")
+    Value* cur = bindings;
+    while (cur->type != NULL_TYPE)
+    {
+        assert(cur->type == CONS_TYPE && "Should be cons type");
+        Value* pairList = car(cur);
+        assert(pairList != NULL && pairList->type == CONS_TYPE);
+        Value* boundSymbol = car(pairList);
+        assert(boundSymbol->type == SYMBOL_TYPE);
+        if (strcmp(boundSymbol->s, symbol->s) == 0) // if boundSymbol is equal to symbol, return the boundValue
+        {
+            Value* boundValue = car(cdr(pairList));
+            return boundValue;
+        }
+        cur = cdr(cur);
+    }
     return NULL;
 }
 
@@ -110,7 +136,7 @@ Value *eval(Value *tree, Frame *frame)
         //     // evaluate x, it looks in the current frame to find a value for x.
         // }
         // break;
-    case SYMBOL_TYPE :
+    case SYMBOL_TYPE : // this means that the whole program is just a variable name, so just return the value of the variable.
         return lookUpSymbol(tree, frame);
     case CONS_TYPE :
         Value *first = car(tree);
