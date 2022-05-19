@@ -10,6 +10,10 @@
 #include <string.h>
 #include <ctype.h>
 #include "interpreter.h"
+#include "linkedlist.c"
+#include "talloc.c"
+#include "tokenizer.c"
+#include "parser.c"
 
 void evaluationError(char *errorMessage)
 {
@@ -47,10 +51,11 @@ Value *lookUpSymbol(Value *symbol, Frame *frame)
                                      //                                                   SYMBOL(x)   INT(1)  SYMBOL(y)  STR("a")
   Value *cur = bindings;
   while (cur->type != NULL_TYPE)
+  //while (cur->type == CONS_TYPE)
   {
-    assert(cur->type == CONS_TYPE && "Should be cons type");
+    //assert(cur->type == CONS_TYPE && "Should be cons type");
     Value *pairList = car(cur);
-    assert(pairList != NULL && pairList->type == CONS_TYPE);
+    //assert(pairList != NULL && pairList->type == CONS_TYPE);
     Value *boundSymbol = car(pairList);
     assert(boundSymbol->type == SYMBOL_TYPE);
     if (strcmp(boundSymbol->s, symbol->s) == 0) // if boundSymbol is equal to symbol, return the boundValue
@@ -116,7 +121,7 @@ Value *copyBindingTree(Value *tree)
 {
   Value* cur = tree;
   Value* newHead = makeNull();
-  assert(cur->type == CONS_TYPE && "Error: tried to copy incorrectly formatted tree\n");
+  assert(cur->type != NULL_TYPE && "Error: tried to copy incorrectly formatted tree\n");
   while (cur->type != NULL_TYPE)
   {
     Value* child = car(cur);
@@ -164,9 +169,14 @@ Value *evalLet(Value *args, Frame *frame)
   Frame *newFrame = talloc(sizeof(Frame));
   newFrame->bindings = frame->bindings;
   newFrame->parent = frame;
-  Value *list = car(args);
-  newFrame->bindings = appendBindingsTree(newFrame->bindings, copyBindingTree(list));
-  return eval(car(cdr(args)), newFrame);
+  if (treeLength(args) < 1){
+    evaluationError("Error: empty arguments to let");
+  } else {
+    Value *list = car(args);
+    newFrame->bindings = appendBindingsTree(newFrame->bindings, copyBindingTree(list));
+    return eval(car(cdr(args)), newFrame);
+  }
+  return NULL;
 }
 
 // tree should just be a single cell
@@ -238,7 +248,7 @@ Value *eval(Value *tree, Frame *frame)
       // Value *args = cdr(tree);
 
       // Sanity and error checking on first...
-
+      printf("%s", car(val)->s);
       if (!strcmp(car(val)->s, "if"))
       {
         return evalIf(cdr(val), frame);
@@ -263,12 +273,12 @@ Value *eval(Value *tree, Frame *frame)
   return NULL;
 }
 
-int main() {
+// int main() {
 
-    Value *list = tokenize();
-    Value *tree = parse(list);
-    interpret(tree);
+//     Value *list = tokenize();
+//     Value *tree = parse(list);
+//     interpret(tree);
 
-    tfree();
-    return 0;
-}
+//     tfree();
+//     return 0;
+// }
