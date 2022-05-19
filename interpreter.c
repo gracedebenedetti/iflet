@@ -171,6 +171,9 @@ Value *evalLet(Value *args, Frame *frame)
     // Value *list = car(args);
     // Value* bindingsCopy = copyBindingTree(list);
     newFrame->bindings = car(args);//appendBindingsTree(newFrame->bindings, bindingsCopy);
+    if (!strcmp(car(cdr(args))->s, "let")){ //when it goes around the second time this fails
+      evalLet(car(cdr(cdr(args))), newFrame);
+    }
     return eval(cdr(args), newFrame);
   }
   return NULL;
@@ -216,7 +219,7 @@ void interpret(Value *tree)
   while (curr->type != NULL_TYPE)
   {
     Value* result = eval(curr,frame);
-    print(result); // unclear on where we are meant to populate the frame with bindings
+    print(result);
     curr = cdr(curr);
     printf("\n");
   }
