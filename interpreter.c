@@ -101,6 +101,7 @@ Value *copyNode(Value* node)
 // (SRC SHOULD BE NEWLY ALLOCATED otherwise pointer hell ensues)
 Value* appendBindingsTree(Value* dst, Value* src)
 {
+  if (dst == NULL) return src;
   Value* cur = dst;
   
   while (cdr(cur)->type != NULL_TYPE)
@@ -111,7 +112,7 @@ Value* appendBindingsTree(Value* dst, Value* src)
   return cur;
 }
 
-Value *copyToBindings(Value *tree)
+Value *copyBindingTree(Value *tree)
 {
   Value* cur = tree;
   Value* newHead = makeNull();
@@ -122,7 +123,7 @@ Value *copyToBindings(Value *tree)
     Value* copyChild;
     if (child->type == CONS_TYPE)
     {
-      copyChild = copyToBindings(child);
+      copyChild = copyBindingTree(child);
     } else
     {
       copyChild = copyNode(child);
@@ -139,22 +140,20 @@ Value *evalIf(Value *args, Frame *frame)
   {
     evaluationError("evalution error");
   }
-  if ((eval(car(args), frame))->type != BOOL_TYPE)
+  Value* boolVal = eval(car(args), frame);
+  if (boolVal->type != BOOL_TYPE)
   {
-    evaluationError("evalution error");
+    evaluationError("Error: 1st argument of IF is not BOOL_TYPE");
   }
   else
   {
-    Frame *newFrame = talloc(sizeof(Frame));
-    newFrame->bindings = frame->bindings;
-    newFrame->parent = frame;
-    if (eval(car(args), frame)->i == 1)
+    if (boolVal->i == 1)
     {
-      return eval(car(cdr(args)), newFrame);
+      return eval(car(cdr(args)), frame);
     }
     else
     {
-      return eval(car(cdr(cdr(args))), newFrame);
+      return eval(car(cdr(cdr(args))), frame);
     }
   }
   return NULL;
@@ -166,10 +165,37 @@ Value *evalLet(Value *args, Frame *frame)
   newFrame->bindings = frame->bindings;
   newFrame->parent = frame;
   Value *list = car(args);
-  newFrame->bindings = appendBindingsTree(newFrame->bindings, copyToBindings(list));
+  newFrame->bindings = appendBindingsTree(newFrame->bindings, copyBindingTree(list));
   return eval(car(cdr(args)), newFrame);
 }
 
+// tree should just be a single cell
+void print(Value* tree)
+{
+  switch (tree->type)
+  {
+    case INT_TYPE :
+      printf("%d", tree->i);
+      break;
+    case DOUBLE_TYPE :
+      printf("%lf",tree->d);
+      break;
+    case STR_TYPE :
+      printf("\"%s\"",tree->s);
+      break;
+    case BOOL_TYPE :
+      if (tree->i == 1)
+      {
+        printf("#t");
+      } else
+      {
+        printf("#f");
+      }
+      break;
+    default :
+      evaluationError("Print error");
+  }
+}
 
 // calls eval for each top-level S-expression in the program.
 // You should print out any necessary results before moving on to the next S-expression.
@@ -179,10 +205,11 @@ void interpret(Value *tree)
   frame->parent = NULL;
   frame->bindings = makeNull();
   // for s-expression in program:
-  Value *curr = car(tree);
+  Value *curr = tree;
   while (curr->type != NULL_TYPE)
   {
-    //print(eval(car(curr), frame)); // unclear on where we are meant to populate the frame with bindings
+    Value* result = eval(curr,frame);
+    print(result); // unclear on where we are meant to populate the frame with bindings
     curr = cdr(curr);
     printf("\n");
   }
@@ -190,35 +217,36 @@ void interpret(Value *tree)
 
 Value *eval(Value *tree, Frame *frame)
 {
-  switch (tree->type)
+  Value* val = car(tree);
+  switch (val->type)
   {
     case INT_TYPE: // this means the whole program consists of one single number, so we can just return the number.
-      return car(tree);
+      return val;
 
     case DOUBLE_TYPE:
-      return car(tree);
+      return val;
     case BOOL_TYPE:
-      return car(tree);
+      return val;
     case NULL_TYPE:
-      return car(tree);
+      return val;
     case STR_TYPE: // this means the whole program is just a string, so we can just return it
-      return car(tree);
+      return val;
     case SYMBOL_TYPE: // this means that the whole program is just a variable name, so just return the value of the variable.
-      return lookUpSymbol(tree, frame);
+      return lookUpSymbol(val, frame);
     case CONS_TYPE:
       // Value *first = car(tree);
       // Value *args = cdr(tree);
 
       // Sanity and error checking on first...
 
-      if (!strcmp(car(tree)->s, "if"))
+      if (!strcmp(car(val)->s, "if"))
       {
-        return evalIf(cdr(tree), frame);
+        return evalIf(cdr(val), frame);
       }
 
-      if (!strcmp(car(tree)->s, "let"))
+      if (!strcmp(car(val)->s, "let"))
       {
-        return evalLet(cdr(tree), frame);
+        return evalLet(cdr(val), frame);
       }
       // .. other special forms here...
 
@@ -228,13 +256,19 @@ Value *eval(Value *tree, Frame *frame)
         evaluationError("Unrecognized symbol");
       }
       break;
+    default:
+      printf("Evaluation error, type: %u,\n",val->type);
+      break;
   }
   return NULL;
 }
 
-int main()
-{
-  Value* tree = parse(tokenize());
-  printf("success\n");
-  return -1;
+int main() {
+
+    Value *list = tokenize();
+    Value *tree = parse(list);
+    interpret(tree);
+
+    tfree();
+    return 0;
 }
