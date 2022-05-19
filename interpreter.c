@@ -10,10 +10,6 @@
 #include <string.h>
 #include <ctype.h>
 #include "interpreter.h"
-#include "linkedlist.c"
-#include "talloc.c"
-#include "tokenizer.c"
-#include "parser.c"
 
 void evaluationError(char *errorMessage)
 {
@@ -145,7 +141,7 @@ Value *evalIf(Value *args, Frame *frame)
   {
     evaluationError("evalution error");
   }
-  Value* boolVal = eval(car(args), frame);
+  Value* boolVal = eval(args, frame);
   if (boolVal->type != BOOL_TYPE)
   {
     evaluationError("Error: 1st argument of IF is not BOOL_TYPE");
@@ -154,11 +150,11 @@ Value *evalIf(Value *args, Frame *frame)
   {
     if (boolVal->i == 1)
     {
-      return eval(car(cdr(args)), frame);
+      return eval(cdr(args), frame);
     }
     else
     {
-      return eval(car(cdr(cdr(args))), frame);
+      return eval(cdr(cdr(args)), frame);
     }
   }
   return NULL;
@@ -174,7 +170,7 @@ Value *evalLet(Value *args, Frame *frame)
   } else {
     Value *list = car(args);
     newFrame->bindings = appendBindingsTree(newFrame->bindings, copyBindingTree(list));
-    return eval(car(cdr(args)), newFrame);
+    return eval(car(args), newFrame);
   }
   return NULL;
 }
@@ -191,7 +187,7 @@ void print(Value* tree)
       printf("%lf",tree->d);
       break;
     case STR_TYPE :
-      printf("\"%s\"",tree->s);
+      printf("%s",tree->s);
       break;
     case BOOL_TYPE :
       if (tree->i == 1)
@@ -248,7 +244,7 @@ Value *eval(Value *tree, Frame *frame)
       // Value *args = cdr(tree);
 
       // Sanity and error checking on first...
-      printf("%s", car(val)->s);
+      //printf("%s", car(val)->s);
       if (!strcmp(car(val)->s, "if"))
       {
         return evalIf(cdr(val), frame);
