@@ -132,7 +132,7 @@ Value *copyBindingTree(Value *tree)
     newHead = cons(copyChild, newHead);
     cur = cdr(cur);
   }
-  return newHead;
+  return reverse(newHead);
 }
 
 Value *evalIf(Value *args, Frame *frame)
@@ -168,9 +168,10 @@ Value *evalLet(Value *args, Frame *frame)
   if (treeLength(args) < 1){
     evaluationError("Error: empty arguments to let");
   } else {
-    Value *list = car(args);
-    newFrame->bindings = appendBindingsTree(newFrame->bindings, copyBindingTree(list));
-    return eval(car(args), newFrame);
+    // Value *list = car(args);
+    // Value* bindingsCopy = copyBindingTree(list);
+    newFrame->bindings = car(args);//appendBindingsTree(newFrame->bindings, bindingsCopy);
+    return eval(cdr(args), newFrame);
   }
   return NULL;
 }
