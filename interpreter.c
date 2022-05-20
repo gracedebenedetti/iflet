@@ -172,6 +172,7 @@ Value *evalLet(Value *args, Frame *frame)
     // Value* bindingsCopy = copyBindingTree(list);
     newFrame->bindings = car(args);//appendBindingsTree(newFrame->bindings, bindingsCopy);
     if (cdr(cdr(args))->type != NULL_TYPE){ //this line is still the one causing issues it cancels out too early
+    //if (cdr(args)->type != NULL_TYPE){
       if (!strcmp(car(car(cdr(args)))->s, "let")){
         evalLet(cdr(car(cdr(args))), newFrame);
       }
