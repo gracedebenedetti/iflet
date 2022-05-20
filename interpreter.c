@@ -41,10 +41,10 @@ Value *lookUpSymbol(Value *symbol, Frame *frame)
   Value *bindings = frame->bindings; // we have to choose how to implement this. my idea is a list of cons cells, where each cell points to a *pair* of
                                      // cons cells, which are (symbol, value)
                                      // so (let ((x 1) (y "a")) ...) would look like *bindings = CONS-------------->CONS
-                                     //                                                       |                   |
-                                     //                                                      CONS--->CONS       CONS--->CONS
-                                     //                                                       |        |         |        |
-                                     //                                                   SYMBOL(x)   INT(1)  SYMBOL(y)  STR("a")
+                                     //                                                            |                   |
+                                     //                                                           CONS--->CONS       CONS--->CONS
+                                     //                                                            |        |         |        |
+                                     //                                                        SYMBOL(x)   INT(1)  SYMBOL(y)  STR("a")
   Value *cur = bindings;
   while (cur->type != NULL_TYPE)
   //while (cur->type == CONS_TYPE)
@@ -75,76 +75,7 @@ Value *lookUpSymbol(Value *symbol, Frame *frame)
   return lookUpSymbol(symbol, frame->parent);
 }
 
-// Value *copyNode(Value* node)
-// {
-//   Value* newNode = talloc(sizeof(Value));
-//   newNode->type = node->type;
-//   switch (newNode->type)
-//   {
-//     case STR_TYPE:
-//       newNode->s = talloc(sizeof(char) * strlen(node->s) + 1);
-//       strcpy(newNode->s, node->s);
-//       break;
-//     case INT_TYPE:
-//       newNode->i = node->i;
-//       break;
-//     case DOUBLE_TYPE:
-//       newNode->d = node->d;
-//       break;
-//     case SYMBOL_TYPE:
-//       newNode->s = talloc(sizeof(char) * strlen(node->s) + 1);
-//       break;
-//     case BOOL_TYPE:
-//       newNode->i = node->i;
-//       break;
-//     case CONS_TYPE:
-//       printf("Error! CONS_TYPE should be copied carefully\n");
-//       texit(1);
-//       break;
-//     default:
-//       printf("Error: Tried to copy unsupported type\n");
-//       texit(1);
-//       break;
-//   }
-//   return newNode;
-// }
-// // Appends the bindings from src to the bindings from dst
-// //
-// // (SRC SHOULD BE NEWLY ALLOCATED otherwise pointer hell ensues)
-// Value* appendBindingsTree(Value* dst, Value* src)
-// {
-//   if (dst == NULL) return src;
-//   Value* cur = dst;
-  
-//   while (cdr(cur)->type != NULL_TYPE)
-//   {
-//     cur = cdr(cur);
-//   }
-//   cur->c.cdr = src;
-//   return cur;
-// }
-
-// Value *copyBindingTree(Value *tree)
-// {
-//   Value* cur = tree;
-//   Value* newHead = makeNull();
-//   assert(cur->type != NULL_TYPE && "Error: tried to copy incorrectly formatted tree\n");
-//   while (cur->type != NULL_TYPE)
-//   {
-//     Value* child = car(cur);
-//     Value* copyChild;
-//     if (child->type == CONS_TYPE)
-//     {
-//       copyChild = copyBindingTree(child);
-//     } else
-//     {
-//       copyChild = copyNode(child);
-//     }
-//     newHead = cons(copyChild, newHead);
-//     cur = cdr(cur);
-//   }
-//   return reverse(newHead);
-// }
+// Valu
 
 Value *evalIf(Value *args, Frame *frame)
 {
@@ -264,11 +195,6 @@ Value *eval(Value *tree, Frame *frame)
       return found;
     }
     case CONS_TYPE:
-      // Value *first = car(tree);
-      // Value *args = cdr(tree);
-
-      // Sanity and error checking on first...
-      //printf("%s", car(val)->s);
       if (!strcmp(car(val)->s, "if"))
       {
         return evalIf(cdr(val), frame);
