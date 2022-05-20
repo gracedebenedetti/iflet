@@ -59,85 +59,92 @@ Value *lookUpSymbol(Value *symbol, Frame *frame)
       Value *boundValue = car(cdr(pairList));
       if (boundValue->type == SYMBOL_TYPE)
       {
-        return lookUpSymbol(boundValue, frame);
+        return lookUpSymbol(boundValue, frame->parent);
+      } else if (boundValue->type == CONS_TYPE)
+      {
+        return eval(cdr(pairList), frame);
       }
       return boundValue;
     }
     cur = cdr(cur);
   }
-  return NULL;
+  if (frame->parent == NULL)
+  {
+    return NULL;
+  }
+  return lookUpSymbol(symbol, frame->parent);
 }
 
-Value *copyNode(Value* node)
-{
-  Value* newNode = talloc(sizeof(Value));
-  newNode->type = node->type;
-  switch (newNode->type)
-  {
-    case STR_TYPE:
-      newNode->s = talloc(sizeof(char) * strlen(node->s) + 1);
-      strcpy(newNode->s, node->s);
-      break;
-    case INT_TYPE:
-      newNode->i = node->i;
-      break;
-    case DOUBLE_TYPE:
-      newNode->d = node->d;
-      break;
-    case SYMBOL_TYPE:
-      newNode->s = talloc(sizeof(char) * strlen(node->s) + 1);
-      break;
-    case BOOL_TYPE:
-      newNode->i = node->i;
-      break;
-    case CONS_TYPE:
-      printf("Error! CONS_TYPE should be copied carefully\n");
-      texit(1);
-      break;
-    default:
-      printf("Error: Tried to copy unsupported type\n");
-      texit(1);
-      break;
-  }
-  return newNode;
-}
-// Appends the bindings from src to the bindings from dst
-//
-// (SRC SHOULD BE NEWLY ALLOCATED otherwise pointer hell ensues)
-Value* appendBindingsTree(Value* dst, Value* src)
-{
-  if (dst == NULL) return src;
-  Value* cur = dst;
+// Value *copyNode(Value* node)
+// {
+//   Value* newNode = talloc(sizeof(Value));
+//   newNode->type = node->type;
+//   switch (newNode->type)
+//   {
+//     case STR_TYPE:
+//       newNode->s = talloc(sizeof(char) * strlen(node->s) + 1);
+//       strcpy(newNode->s, node->s);
+//       break;
+//     case INT_TYPE:
+//       newNode->i = node->i;
+//       break;
+//     case DOUBLE_TYPE:
+//       newNode->d = node->d;
+//       break;
+//     case SYMBOL_TYPE:
+//       newNode->s = talloc(sizeof(char) * strlen(node->s) + 1);
+//       break;
+//     case BOOL_TYPE:
+//       newNode->i = node->i;
+//       break;
+//     case CONS_TYPE:
+//       printf("Error! CONS_TYPE should be copied carefully\n");
+//       texit(1);
+//       break;
+//     default:
+//       printf("Error: Tried to copy unsupported type\n");
+//       texit(1);
+//       break;
+//   }
+//   return newNode;
+// }
+// // Appends the bindings from src to the bindings from dst
+// //
+// // (SRC SHOULD BE NEWLY ALLOCATED otherwise pointer hell ensues)
+// Value* appendBindingsTree(Value* dst, Value* src)
+// {
+//   if (dst == NULL) return src;
+//   Value* cur = dst;
   
-  while (cdr(cur)->type != NULL_TYPE)
-  {
-    cur = cdr(cur);
-  }
-  cur->c.cdr = src;
-  return cur;
-}
+//   while (cdr(cur)->type != NULL_TYPE)
+//   {
+//     cur = cdr(cur);
+//   }
+//   cur->c.cdr = src;
+//   return cur;
+// }
 
-Value *copyBindingTree(Value *tree)
-{
-  Value* cur = tree;
-  Value* newHead = makeNull();
-  assert(cur->type != NULL_TYPE && "Error: tried to copy incorrectly formatted tree\n");
-  while (cur->type != NULL_TYPE)
-  {
-    Value* child = car(cur);
-    Value* copyChild;
-    if (child->type == CONS_TYPE)
-    {
-      copyChild = copyBindingTree(child);
-    } else
-    {
-      copyChild = copyNode(child);
-    }
-    newHead = cons(copyChild, newHead);
-    cur = cdr(cur);
-  }
-  return reverse(newHead);
-}
+// Value *copyBindingTree(Value *tree)
+// {
+//   Value* cur = tree;
+//   Value* newHead = makeNull();
+//   assert(cur->type != NULL_TYPE && "Error: tried to copy incorrectly formatted tree\n");
+//   while (cur->type != NULL_TYPE)
+//   {
+//     Value* child = car(cur);
+//     Value* copyChild;
+//     if (child->type == CONS_TYPE)
+//     {
+//       copyChild = copyBindingTree(child);
+//     } else
+//     {
+//       copyChild = copyNode(child);
+//     }
+//     newHead = cons(copyChild, newHead);
+//     cur = cdr(cur);
+//   }
+//   return reverse(newHead);
+// }
 
 Value *evalIf(Value *args, Frame *frame)
 {
@@ -172,15 +179,9 @@ Value *evalLet(Value *args, Frame *frame)
   if (treeLength(args) < 1){
     evaluationError("Error: empty arguments to let");
   } else {
-    // Value *list = car(args);
-    // Value* bindingsCopy = copyBindingTree(list);
     newFrame->bindings = car(args);
-    appendBindingsTree(newFrame->bindings, frame->bindings);
-    // if (cdr(cdr(args))->type != NULL_TYPE){ //this line is still the one causing issues it cancels out too early
-    //   if (!strcmp(car(car(cdr(args)))->s, "let")){
-    //     evalLet(cdr(car(cdr(args))), newFrame);
-    //   }
-    // }
+    //appendBindingsTree(newFrame->bindings, frame->bindings);
+    
     Value* next = cdr(args);
     return eval(next, newFrame);
   }
@@ -253,8 +254,15 @@ Value *eval(Value *tree, Frame *frame)
       return val;
     case STR_TYPE: // this means the whole program is just a string, so we can just return it
       return val;
-    case SYMBOL_TYPE: // this means that the whole program is just a variable name, so just return the value of the variable.
-      return lookUpSymbol(val, frame);
+    case SYMBOL_TYPE:
+    {               // this means that the whole program is just a variable name, so just return the value of the variable.
+      Value* found = lookUpSymbol(val, frame);
+      if (found == NULL)
+      {
+        evaluationError("symbol not found.\n");
+      }
+      return found;
+    }
     case CONS_TYPE:
       // Value *first = car(tree);
       // Value *args = cdr(tree);
