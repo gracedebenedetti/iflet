@@ -57,6 +57,10 @@ Value *lookUpSymbol(Value *symbol, Frame *frame)
     if (!strcmp(boundSymbol->s, symbol->s)) // if boundSymbol is equal to symbol, return the boundValue
     {
       Value *boundValue = car(cdr(pairList));
+      if (boundValue->type == SYMBOL_TYPE)
+      {
+        return lookUpSymbol(boundValue, frame);
+      }
       return boundValue;
     }
     cur = cdr(cur);
