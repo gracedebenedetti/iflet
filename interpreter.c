@@ -210,6 +210,10 @@ void print(Value* tree)
         printf("#f");
       }
       break;
+    case CONS_TYPE :
+      //printf("(");
+      printTree(tree);
+      break;
     default :
       evaluationError("Print error");
   }
