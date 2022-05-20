@@ -54,7 +54,7 @@ Value *lookUpSymbol(Value *symbol, Frame *frame)
     //assert(pairList != NULL && pairList->type == CONS_TYPE);
     Value *boundSymbol = car(pairList);
     assert(boundSymbol->type == SYMBOL_TYPE);
-    if (strcmp(boundSymbol->s, symbol->s) == 0) // if boundSymbol is equal to symbol, return the boundValue
+    if (!strcmp(boundSymbol->s, symbol->s)) // if boundSymbol is equal to symbol, return the boundValue
     {
       Value *boundValue = car(cdr(pairList));
       return boundValue;
@@ -170,14 +170,15 @@ Value *evalLet(Value *args, Frame *frame)
   } else {
     // Value *list = car(args);
     // Value* bindingsCopy = copyBindingTree(list);
-    newFrame->bindings = car(args);//appendBindingsTree(newFrame->bindings, bindingsCopy);
-    if (cdr(cdr(args))->type != NULL_TYPE){ //this line is still the one causing issues it cancels out too early
-    //if (cdr(args)->type != NULL_TYPE){
-      if (!strcmp(car(car(cdr(args)))->s, "let")){
-        evalLet(cdr(car(cdr(args))), newFrame);
-      }
-    }
-    return eval(cdr(args), newFrame);
+    newFrame->bindings = car(args);
+    appendBindingsTree(newFrame->bindings, frame->bindings);
+    // if (cdr(cdr(args))->type != NULL_TYPE){ //this line is still the one causing issues it cancels out too early
+    //   if (!strcmp(car(car(cdr(args)))->s, "let")){
+    //     evalLet(cdr(car(cdr(args))), newFrame);
+    //   }
+    // }
+    Value* next = cdr(args);
+    return eval(next, newFrame);
   }
   return NULL;
 }
