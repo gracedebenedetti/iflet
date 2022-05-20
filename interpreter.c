@@ -171,8 +171,10 @@ Value *evalLet(Value *args, Frame *frame)
     // Value *list = car(args);
     // Value* bindingsCopy = copyBindingTree(list);
     newFrame->bindings = car(args);//appendBindingsTree(newFrame->bindings, bindingsCopy);
-    if (!strcmp(car(cdr(args))->s, "let")){ //when it goes around the second time this fails
-      evalLet(car(cdr(cdr(args))), newFrame);
+    if (cdr(cdr(args))->type != NULL_TYPE){ //this line is still the one causing issues it cancels out too early
+      if (!strcmp(car(car(cdr(args)))->s, "let")){
+        evalLet(cdr(car(cdr(args))), newFrame);
+      }
     }
     return eval(cdr(args), newFrame);
   }
@@ -182,7 +184,7 @@ Value *evalLet(Value *args, Frame *frame)
 // tree should just be a single cell
 void print(Value* tree)
 {
-  switch (tree->type)
+  switch (tree->type) //segfault for let04
   {
     case INT_TYPE :
       printf("%d", tree->i);
